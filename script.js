@@ -1,10 +1,8 @@
 /**
- * 神経衰弱（2人対戦） - 52枚（ジョーカー除く）、同ランク一致でペア成立。
+ * 神経衰弱（複数人対戦） - 52枚（ジョーカー除く）、同ランク一致でペア成立。
  * - 通常ペア: 1ポイント
  * - 最後の5ペア: 2ポイント（ペア残数が5以下の時に成立したペア）
  * - マッチ時は同じプレイヤーの手番継続、ミスマッチで交代
- * UI: スタート/再スタートボタン、緑テーマ、シンプル構成
- * すべての関数にJSDoc型注釈を付与
  */
 
 /** @typedef {"♠"|"♥"|"♦"|"♣"} Suit */
@@ -17,46 +15,54 @@
  */
 
 /**
+ * @typedef {Object} Player
+ * @property {string} name
+ * @property {number} score
+ * @property {string} color
+ */
+
+/**
  * @typedef {Object} GameState
  * @property {Card[]} deck - 現在の山札（盤面のカード）
  * @property {Set<string>} matched - 取得済みカードID
  * @property {string[]} revealed - 表示中のカードID（最大2）
- * @property {[number, number]} scores - P1, P2のスコア
- * @property {number} currentPlayer - 現在のプレイヤー（1|2）
+ * @property {Player[]} players - プレイヤー配列
+ * @property {number} currentPlayerIndex - 現在のプレイヤーインデックス
  * @property {boolean} inputLocked - アニメーション/判定中の入力ロック
  * @property {number} pairsRemaining - 残りペア数（初期26）
  * @property {boolean} started - ゲーム中フラグ
  */
 
-/** @type {HTMLElement} */
+// DOM要素
 const boardEl = document.getElementById("board");
-/** @type {HTMLButtonElement} */
-const startBtn = document.getElementById("startBtn");
-/** @type {HTMLButtonElement} */
 const hideBtn = document.getElementById("hideBtn");
-/** @type {HTMLButtonElement} */
 const shuffleBtn = document.getElementById("shuffleBtn");
-/** @type {HTMLElement} */
-const statusBar = document.getElementById("statusBar");
-/** @type {HTMLElement} */
-const turnLabel = document.getElementById("turnLabel");
-/** @type {HTMLElement} */
-const scoreP1 = document.getElementById("scoreP1");
-/** @type {HTMLElement} */
-const scoreP2 = document.getElementById("scoreP2");
-/** @type {HTMLElement} */
+const menuBtn = document.getElementById("menuBtn");
+const setupScreen = document.getElementById("setupScreen");
+const scoreboard = document.getElementById("scoreboard");
+const currentPlayerName = document.getElementById("currentPlayerName");
+const scoresGrid = document.getElementById("scoresGrid");
 const pairsLeft = document.getElementById("pairsLeft");
-/** @type {HTMLElement} */
 const overlay = document.getElementById("overlay");
-/** @type {HTMLElement} */
 const resultHeading = document.getElementById("resultHeading");
-/** @type {HTMLElement} */
-const resultDetail = document.getElementById("resultDetail");
-/** @type {HTMLButtonElement} */
+const resultRanking = document.getElementById("resultRanking");
 const restartBtn = document.getElementById("restartBtn");
+const newGameBtn = document.getElementById("newGameBtn");
+const startGameBtn = document.getElementById("startGameBtn");
+const playerCountDisplay = document.getElementById("playerCountDisplay");
+const increasePlayerBtn = document.getElementById("increasePlayerBtn");
+const decreasePlayerBtn = document.getElementById("decreasePlayerBtn");
+const playersList = document.getElementById("playersList");
+
+// プレイヤー色のパレット
+const playerColors = [
+  "#4CAF50", "#2196F3", "#FF9800", "#E91E63", "#9C27B0",
+  "#00BCD4", "#FFEB3B", "#795548", "#607D8B", "#F44336"
+];
 
 /** @type {GameState} */
 let state = createInitialState();
+let playerCount = 2;
 
 /**
  * 初期状態を生成
@@ -67,8 +73,8 @@ function createInitialState() {
     deck: [],
     matched: new Set(),
     revealed: [],
-    scores: [0, 0],
-    currentPlayer: 1,
+    players: [],
+    currentPlayerIndex: 0,
     inputLocked: false,
     pairsRemaining: 26,
     started: false,
@@ -109,19 +115,90 @@ function shuffle(arr) {
 }
 
 /**
+ * プレイヤー設定画面を初期化
+ */
+function initializeSetup() {
+  updatePlayersList();
+}
+
+/**
+ * プレイヤーリストを更新
+ */
+function updatePlayersList() {
+  playersList.innerHTML = "";
+  for (let i = 0; i < playerCount; i++) {
+    const playerItem = document.createElement("div");
+    playerItem.className = "player-item";
+    
+    const avatar = document.createElement("div");
+    avatar.className = "player-avatar";
+    avatar.style.background = playerColors[i % playerColors.length];
+    const letter = String.fromCharCode(65 + i); // A, B, C...
+    avatar.textContent = letter;
+    
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "player-name-input";
+    input.placeholder = letter;
+    input.value = letter;
+    input.dataset.playerIndex = i;
+    
+    playerItem.appendChild(avatar);
+    playerItem.appendChild(input);
+    playersList.appendChild(playerItem);
+  }
+  playerCountDisplay.textContent = playerCount;
+}
+
+/**
+ * プレイヤー数を増やす
+ */
+function increasePlayerCount() {
+  if (playerCount < 10) {
+    playerCount++;
+    updatePlayersList();
+  }
+}
+
+/**
+ * プレイヤー数を減らす
+ */
+function decreasePlayerCount() {
+  if (playerCount > 2) {
+    playerCount--;
+    updatePlayersList();
+  }
+}
+
+/**
  * ゲーム開始処理
- * - 盤面生成、状態初期化、UI表示
  */
 function startGame() {
+  // プレイヤー情報を収集
+  const players = [];
+  const inputs = playersList.querySelectorAll(".player-name-input");
+  inputs.forEach((input, index) => {
+    const letter = String.fromCharCode(65 + index); // A, B, C...
+    players.push({
+      name: input.value || letter,
+      score: 0,
+      color: playerColors[index % playerColors.length]
+    });
+  });
+  
   state = createInitialState();
   state.deck = shuffle(buildStandardDeck());
+  state.players = players;
   state.started = true;
-  statusBar.classList.remove("hidden");
+  
+  setupScreen.classList.add("hidden");
+  scoreboard.classList.remove("hidden");
   overlay.classList.add("hidden");
-  startBtn.classList.add("hidden");
   hideBtn.classList.add("hidden");
-  shuffleBtn.classList.remove("hidden");
+  menuBtn.classList.remove("hidden");
+  
   renderBoard();
+  renderScoreboard();
   updateUI();
 }
 
@@ -137,12 +214,31 @@ function renderBoard() {
 }
 
 /**
+ * スコアボードを描画
+ */
+function renderScoreboard() {
+  scoresGrid.innerHTML = "";
+  state.players.forEach((player, index) => {
+    const scoreItem = document.createElement("div");
+    scoreItem.className = `score-item ${index === state.currentPlayerIndex ? "active" : ""}`;
+    scoreItem.innerHTML = `
+      <div class="score-name">${player.name}</div>
+      <div class="score-value">${player.score}</div>
+    `;
+    scoreItem.style.borderColor = player.color;
+    if (index === state.currentPlayerIndex) {
+      scoreItem.style.borderWidth = "3px";
+    }
+    scoresGrid.appendChild(scoreItem);
+  });
+}
+
+/**
  * ステータス表示を更新
  */
 function renderStatus() {
-  turnLabel.textContent = state.currentPlayer === 1 ? "プレイヤー1" : "プレイヤー2";
-  scoreP1.textContent = String(state.scores[0]);
-  scoreP2.textContent = String(state.scores[1]);
+  const currentPlayer = state.players[state.currentPlayerIndex];
+  currentPlayerName.textContent = currentPlayer.name;
   pairsLeft.textContent = String(state.pairsRemaining);
 }
 
@@ -163,6 +259,7 @@ function updateButtons() {
 /** 全体UI更新 */
 function updateUI() {
   renderStatus();
+  renderScoreboard();
   updateButtons();
 }
 
@@ -188,7 +285,7 @@ function createCardElement(card) {
 
   const back = document.createElement("div");
   back.className = "card-back";
-  back.textContent = "TRUMP";
+  back.textContent = "かーど";
 
   const face = document.createElement("div");
   face.className = "card-face";
@@ -255,7 +352,7 @@ function resolveTurn() {
   if (isMatch) {
     // スコア加算（最後の5ペアは2点）
     const points = getPointsForCurrentPair();
-    if (state.currentPlayer === 1) state.scores[0] += points; else state.scores[1] += points;
+    state.players[state.currentPlayerIndex].score += points;
 
     state.matched.add(a.id);
     state.matched.add(b.id);
@@ -315,26 +412,83 @@ function markRemoved(cardId) {
  */
 function endGame() {
   state.started = false;
-  const [p1, p2] = state.scores;
-  let heading = "ゲーム終了";
-  let detail = `P1: ${p1}点 / P2: ${p2}点\n`;
-  if (p1 > p2) detail += "勝者: プレイヤー1"; else if (p2 > p1) detail += "勝者: プレイヤー2"; else detail += "引き分け";
-
-  resultHeading.textContent = heading;
-  resultDetail.textContent = detail;
+  
+  // プレイヤーをスコア順にソート
+  const sortedPlayers = [...state.players].sort((a, b) => b.score - a.score);
+  
+  // ランキング表示を生成
+  resultRanking.innerHTML = "";
+  sortedPlayers.forEach((player, index) => {
+    const rankItem = document.createElement("div");
+    rankItem.className = `ranking-item ${index === 0 ? "winner" : ""}`;
+    
+    const position = document.createElement("div");
+    position.className = "ranking-position";
+    
+    if (index < 3) {
+      const medal = document.createElement("div");
+      medal.className = `ranking-medal ${index === 0 ? "medal-gold" : index === 1 ? "medal-silver" : "medal-bronze"}`;
+      medal.textContent = `${index + 1}`;
+      position.appendChild(medal);
+    } else {
+      const rankNumber = document.createElement("span");
+      rankNumber.textContent = `${index + 1}ばん`;
+      rankNumber.style.marginLeft = "8px";
+      position.appendChild(rankNumber);
+    }
+    
+    const nameSpan = document.createElement("span");
+    nameSpan.textContent = player.name;
+    position.appendChild(nameSpan);
+    
+    const score = document.createElement("div");
+    score.className = "ranking-score";
+    score.textContent = `${player.score}てん`;
+    
+    rankItem.appendChild(position);
+    rankItem.appendChild(score);
+    resultRanking.appendChild(rankItem);
+  });
+  
+  // 優勝者判定
+  const winners = sortedPlayers.filter(p => p.score === sortedPlayers[0].score);
+  if (winners.length > 1) {
+    resultHeading.textContent = "ひきわけ！";
+  } else {
+    resultHeading.textContent = `${winners[0].name}のかち！`;
+  }
+  
   overlay.classList.remove("hidden");
-  startBtn.classList.add("hidden");
 }
 
-/** リスタート処理 */
+/** 同じプレイヤーで再スタート */
 function restartGame() {
+  // プレイヤー情報を保持して再開
+  const players = state.players.map(p => ({
+    ...p,
+    score: 0
+  }));
+  
+  state = createInitialState();
+  state.deck = shuffle(buildStandardDeck());
+  state.players = players;
+  state.started = true;
+  
   overlay.classList.add("hidden");
-  startGame();
+  renderBoard();
+  updateUI();
 }
 
-// イベント登録
-startBtn.addEventListener("click", startGame);
-restartBtn.addEventListener("click", restartGame);
+/** プレイヤー設定画面に戻る */
+function newGame() {
+  state = createInitialState();
+  overlay.classList.add("hidden");
+  scoreboard.classList.add("hidden");
+  setupScreen.classList.remove("hidden");
+  menuBtn.classList.add("hidden");
+  boardEl.innerHTML = "";
+  initializeSetup();
+}
 
 /**
  * 現在の2枚が一致しているかどうか
@@ -358,7 +512,9 @@ function hideRevealedCards() {
   flipDOM(x, false);
   flipDOM(y, false);
   state.revealed = [];
-  state.currentPlayer = state.currentPlayer === 1 ? 2 : 1;
+  
+  // 次のプレイヤーへ
+  state.currentPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
   state.inputLocked = false;
   hideBtn.classList.add("hidden");
   updateUI();
@@ -375,5 +531,15 @@ function shuffleBoard() {
   updateUI();
 }
 
+// イベント登録
+startGameBtn.addEventListener("click", startGame);
+restartBtn.addEventListener("click", restartGame);
+newGameBtn.addEventListener("click", newGame);
+increasePlayerBtn.addEventListener("click", increasePlayerCount);
+decreasePlayerBtn.addEventListener("click", decreasePlayerCount);
 hideBtn.addEventListener("click", hideRevealedCards);
 shuffleBtn.addEventListener("click", shuffleBoard);
+menuBtn.addEventListener("click", newGame);
+
+// 初期化
+initializeSetup();

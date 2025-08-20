@@ -3,37 +3,107 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>神経衰弱（2人用）</title>
+    <title>神経衰弱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <main class="app">
       <header class="topbar">
-        <h1 class="title">神経衰弱</h1>
+        <div class="title-section">
+          <span class="material-icons-round title-icon">style</span>
+          <h1 class="title">しんけいすいじゃく</h1>
+        </div>
         <div class="controls">
-          <button id="startBtn" class="btn btn-primary">スタート</button>
-          <button id="hideBtn" class="btn btn-ghost hidden" title="2枚を伏せる">カードを伏せる</button>
-          <button id="shuffleBtn" class="btn btn-ghost hidden" title="盤面をシャッフル">シャッフル</button>
+          <button id="menuBtn" class="btn btn-icon hidden" title="メニュー">
+            <span class="material-icons-round">home</span>
+            <span class="btn-text">メニュー</span>
+          </button>
         </div>
       </header>
 
-      <section id="statusBar" class="status hidden" aria-live="polite">
-        <div class="pill">手番: <span id="turnLabel">—</span></div>
-        <div class="pill">P1: <span id="scoreP1">0</span> / P2: <span id="scoreP2">0</span></div>
-        <div class="pill">残りペア: <span id="pairsLeft">26</span></div>
+      <!-- プレイヤー設定画面 -->
+      <section id="setupScreen" class="setup-screen">
+        <div class="setup-container">
+          <h2 class="setup-title">
+            <span class="material-icons-round">groups</span>
+            あそぶひと
+          </h2>
+          
+          <div class="player-count-selector">
+            <label>なんにんであそぶ？</label>
+            <div class="number-selector">
+              <button id="decreasePlayerBtn" class="btn-number">
+                <span class="material-icons-round">remove</span>
+              </button>
+              <span id="playerCountDisplay" class="count-display">2</span>
+              <button id="increasePlayerBtn" class="btn-number">
+                <span class="material-icons-round">add</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="playersList" class="players-list"></div>
+
+          <button id="startGameBtn" class="btn btn-primary btn-large">
+            <span class="material-icons-round">play_arrow</span>
+            はじめる
+          </button>
+        </div>
+      </section>
+
+      <!-- スコアボード -->
+      <section id="scoreboard" class="scoreboard hidden">
+        <div class="current-turn">
+          <span class="material-icons-round">person</span>
+          <span id="currentPlayerName">—</span>のばん
+        </div>
+        <div class="scores-grid" id="scoresGrid"></div>
+        <div class="game-info">
+          <div class="info-item">
+            <span class="material-icons-round">style</span>
+            のこり<span id="pairsLeft">26</span>くみ
+          </div>
+        </div>
+        <div class="game-controls">
+          <button id="hideBtn" class="btn btn-game-control hidden" title="かーどをうらがえす">
+            <span class="material-icons-round">flip_to_back</span>
+            <span>うらがえす</span>
+          </button>
+          <button id="shuffleBtn" class="btn btn-game-control" title="まぜる">
+            <span class="material-icons-round">shuffle</span>
+            <span>まぜる</span>
+          </button>
+        </div>
       </section>
 
       <section id="board" class="board" aria-label="カードボード"></section>
 
+      <!-- 結果画面 -->
       <div id="overlay" class="overlay hidden" role="dialog" aria-modal="true">
-        <div class="dialog">
-          <h2 id="resultHeading">結果</h2>
-          <p id="resultDetail"></p>
-          <button id="restartBtn" class="btn btn-primary">もう一度スタートする</button>
+        <div class="dialog result-dialog">
+          <div class="trophy-icon">
+            <span class="material-icons-round">emoji_events</span>
+          </div>
+          <h2 id="resultHeading">おわり！</h2>
+          <div id="resultRanking" class="result-ranking"></div>
+          <div class="dialog-actions">
+            <button id="newGameBtn" class="btn btn-secondary">
+              <span class="material-icons-round">group_add</span>
+              ひとをかえる
+            </button>
+            <button id="restartBtn" class="btn btn-primary">
+              <span class="material-icons-round">replay</span>
+              もういちど
+            </button>
+          </div>
         </div>
       </div>
     </main>
 
     <script src="script.js" defer></script>
   </body>
-  </html>
+</html>
