@@ -49,6 +49,7 @@ const resultRanking = document.getElementById("resultRanking");
 const restartBtn = document.getElementById("restartBtn");
 const newGameBtn = document.getElementById("newGameBtn");
 const startGameBtn = document.getElementById("startGameBtn");
+const matchPopup = document.getElementById("matchPopup");
 const playerCountDisplay = document.getElementById("playerCountDisplay");
 const increasePlayerBtn = document.getElementById("increasePlayerBtn");
 const decreasePlayerBtn = document.getElementById("decreasePlayerBtn");
@@ -63,6 +64,97 @@ const playerColors = [
 /** @type {GameState} */
 let state = createInitialState();
 let playerCount = 2;
+let cardType = "trump"; // "trump" or "animals"
+
+// 動物カードのデータ（26種類のペア）
+const animalPairs = [
+  { id: "dog", emoji: "🐕", name: "いぬ" },
+  { id: "cat", emoji: "🐈", name: "ねこ" },
+  { id: "rabbit", emoji: "🐰", name: "うさぎ" },
+  { id: "bear", emoji: "🐻", name: "くま" },
+  { id: "panda", emoji: "🐼", name: "ぱんだ" },
+  { id: "tiger", emoji: "🐯", name: "とら" },
+  { id: "lion", emoji: "🦁", name: "らいおん" },
+  { id: "cow", emoji: "🐄", name: "うし" },
+  { id: "pig", emoji: "🐷", name: "ぶた" },
+  { id: "mouse", emoji: "🐭", name: "ねずみ" },
+  { id: "hamster", emoji: "🐹", name: "はむすたー" },
+  { id: "fox", emoji: "🦊", name: "きつね" },
+  { id: "wolf", emoji: "🐺", name: "おおかみ" },
+  { id: "horse", emoji: "🐴", name: "うま" },
+  { id: "monkey", emoji: "🐵", name: "さる" },
+  { id: "elephant", emoji: "🐘", name: "ぞう" },
+  { id: "koala", emoji: "🐨", name: "こあら" },
+  { id: "penguin", emoji: "🐧", name: "ぺんぎん" },
+  { id: "bird", emoji: "🐦", name: "とり" },
+  { id: "chick", emoji: "🐥", name: "ひよこ" },
+  { id: "duck", emoji: "🦆", name: "あひる" },
+  { id: "owl", emoji: "🦉", name: "ふくろう" },
+  { id: "frog", emoji: "🐸", name: "かえる" },
+  { id: "turtle", emoji: "🐢", name: "かめ" },
+  { id: "fish", emoji: "🐠", name: "さかな" },
+  { id: "dolphin", emoji: "🐬", name: "いるか" }
+];
+
+// アルファベットカードのデータ（26文字のペア）
+const alphabetPairs = [
+  { id: "A", emoji: "A", name: "えー", color: "#FF6B6B" },
+  { id: "B", emoji: "B", name: "びー", color: "#4ECDC4" },
+  { id: "C", emoji: "C", name: "しー", color: "#45B7D1" },
+  { id: "D", emoji: "D", name: "でぃー", color: "#96CEB4" },
+  { id: "E", emoji: "E", name: "いー", color: "#FFEAA7" },
+  { id: "F", emoji: "F", name: "えふ", color: "#DDA0DD" },
+  { id: "G", emoji: "G", name: "じー", color: "#98D8C8" },
+  { id: "H", emoji: "H", name: "えいち", color: "#FFB6C1" },
+  { id: "I", emoji: "I", name: "あい", color: "#87CEEB" },
+  { id: "J", emoji: "J", name: "じぇい", color: "#F0E68C" },
+  { id: "K", emoji: "K", name: "けい", color: "#FFB347" },
+  { id: "L", emoji: "L", name: "える", color: "#FF69B4" },
+  { id: "M", emoji: "M", name: "えむ", color: "#20B2AA" },
+  { id: "N", emoji: "N", name: "えぬ", color: "#9370DB" },
+  { id: "O", emoji: "O", name: "おー", color: "#3CB371" },
+  { id: "P", emoji: "P", name: "ぴー", color: "#FF1493" },
+  { id: "Q", emoji: "Q", name: "きゅー", color: "#00CED1" },
+  { id: "R", emoji: "R", name: "あーる", color: "#FF8C00" },
+  { id: "S", emoji: "S", name: "えす", color: "#32CD32" },
+  { id: "T", emoji: "T", name: "てぃー", color: "#FF6347" },
+  { id: "U", emoji: "U", name: "ゆー", color: "#4169E1" },
+  { id: "V", emoji: "V", name: "ぶい", color: "#DB7093" },
+  { id: "W", emoji: "W", name: "だぶりゅー", color: "#48D1CC" },
+  { id: "X", emoji: "X", name: "えっくす", color: "#B22222" },
+  { id: "Y", emoji: "Y", name: "わい", color: "#228B22" },
+  { id: "Z", emoji: "Z", name: "ぜっと", color: "#FF00FF" }
+];
+
+// 乗り物カードのデータ（26種類のペア）
+const vehiclePairs = [
+  { id: "car", emoji: "🚗", name: "くるま" },
+  { id: "bus", emoji: "🚌", name: "ばす" },
+  { id: "truck", emoji: "🚚", name: "とらっく" },
+  { id: "taxi", emoji: "🚕", name: "たくしー" },
+  { id: "police", emoji: "🚓", name: "ぱとかー" },
+  { id: "ambulance", emoji: "🚑", name: "きゅうきゅうしゃ" },
+  { id: "fire", emoji: "🚒", name: "しょうぼうしゃ" },
+  { id: "bike", emoji: "🚲", name: "じてんしゃ" },
+  { id: "motorcycle", emoji: "🏍️", name: "ばいく" },
+  { id: "train", emoji: "🚃", name: "でんしゃ" },
+  { id: "bullet", emoji: "🚄", name: "しんかんせん" },
+  { id: "subway", emoji: "🚇", name: "ちかてつ" },
+  { id: "tram", emoji: "🚊", name: "ろめんでんしゃ" },
+  { id: "airplane", emoji: "✈️", name: "ひこうき" },
+  { id: "helicopter", emoji: "🚁", name: "へりこぷたー" },
+  { id: "rocket", emoji: "🚀", name: "ろけっと" },
+  { id: "ship", emoji: "🚢", name: "ふね" },
+  { id: "sailboat", emoji: "⛵", name: "よっと" },
+  { id: "speedboat", emoji: "🚤", name: "もーたーぼーと" },
+  { id: "tractor", emoji: "🚜", name: "とらくたー" },
+  { id: "scooter", emoji: "🛴", name: "きっくぼーど" },
+  { id: "sled", emoji: "🛷", name: "そり" },
+  { id: "cablecar", emoji: "🚡", name: "ろーぷうぇい" },
+  { id: "monorail", emoji: "🚝", name: "ものれーる" },
+  { id: "balloon", emoji: "🎈", name: "ききゅう" },
+  { id: "ufo", emoji: "🛸", name: "ゆーふぉー" }
+];
 
 /**
  * 初期状態を生成
@@ -97,6 +189,86 @@ function buildStandardDeck() {
       deck.push({ id: `${rank}${suit}`, rank, suit });
     }
   }
+  return deck;
+}
+
+/**
+ * 動物カードデッキを生成（52枚）
+ * @returns {Card[]}
+ */
+function buildAnimalDeck() {
+  const deck = [];
+  // 各動物を2枚ずつ作成（26種類 × 2 = 52枚）
+  animalPairs.forEach(animal => {
+    deck.push({ 
+      id: `${animal.id}_1`, 
+      rank: animal.id,
+      suit: "animal",
+      emoji: animal.emoji,
+      name: animal.name
+    });
+    deck.push({ 
+      id: `${animal.id}_2`, 
+      rank: animal.id,
+      suit: "animal",
+      emoji: animal.emoji,
+      name: animal.name
+    });
+  });
+  return deck;
+}
+
+/**
+ * アルファベットカードデッキを生成（52枚）
+ * @returns {Card[]}
+ */
+function buildAlphabetDeck() {
+  const deck = [];
+  // 各文字を2枚ずつ作成（26文字 × 2 = 52枚）
+  alphabetPairs.forEach(letter => {
+    deck.push({ 
+      id: `${letter.id}_1`, 
+      rank: letter.id,
+      suit: "alphabet",
+      emoji: letter.emoji,
+      name: letter.name,
+      color: letter.color
+    });
+    deck.push({ 
+      id: `${letter.id}_2`, 
+      rank: letter.id,
+      suit: "alphabet",
+      emoji: letter.emoji,
+      name: letter.name,
+      color: letter.color
+    });
+  });
+  return deck;
+}
+
+/**
+ * 乗り物カードデッキを生成（52枚）
+ * @returns {Card[]}
+ */
+function buildVehicleDeck() {
+  const deck = [];
+  // 各乗り物を2枚ずつ作成（26種類 × 2 = 52枚）
+  vehiclePairs.forEach(vehicle => {
+    deck.push({ 
+      id: `${vehicle.id}_1`, 
+      rank: vehicle.id,
+      suit: "vehicle",
+      emoji: vehicle.emoji,
+      name: vehicle.name
+    });
+    deck.push({ 
+      id: `${vehicle.id}_2`, 
+      rank: vehicle.id,
+      suit: "vehicle",
+      emoji: vehicle.emoji,
+      name: vehicle.name
+    });
+  });
   return deck;
 }
 
@@ -187,7 +359,22 @@ function startGame() {
   });
   
   state = createInitialState();
-  state.deck = shuffle(buildStandardDeck());
+  // カードタイプに応じてデッキを選択
+  let deck;
+  switch(cardType) {
+    case "animals":
+      deck = buildAnimalDeck();
+      break;
+    case "alphabet":
+      deck = buildAlphabetDeck();
+      break;
+    case "vehicles":
+      deck = buildVehicleDeck();
+      break;
+    default:
+      deck = buildStandardDeck();
+  }
+  state.deck = shuffle(deck);
   state.players = players;
   state.started = true;
   
@@ -285,19 +472,53 @@ function createCardElement(card) {
 
   const back = document.createElement("div");
   back.className = "card-back";
-  back.textContent = "かーど";
+  // カードタイプに応じて裏面のテキストを変更
+  const backTexts = {
+    animals: "どうぶつ",
+    alphabet: "ABC",
+    vehicles: "のりもの",
+    trump: "かーど"
+  };
+  back.textContent = backTexts[cardType] || "かーど";
 
   const face = document.createElement("div");
   face.className = "card-face";
 
-  const colorClass = card.suit === "♥" || card.suit === "♦" ? "suit-red" : "suit-black";
-  face.innerHTML = `
-    <div class="corner ${colorClass}">${card.rank}<br>${card.suit}</div>
-    <div class="rank-suit ${colorClass}" aria-hidden="true" style="font-size:24px;">
-      ${card.rank} ${card.suit}
-    </div>
-    <div class="corner bottom ${colorClass}">${card.rank}<br>${card.suit}</div>
-  `;
+  if (card.suit === "animal") {
+    // 動物カードの表面
+    face.innerHTML = `
+      <div class="animal-card-content">
+        <div class="animal-emoji">${card.emoji}</div>
+        <div class="animal-name">${card.name}</div>
+      </div>
+    `;
+  } else if (card.suit === "alphabet") {
+    // アルファベットカードの表面
+    face.innerHTML = `
+      <div class="alphabet-card-content" style="background: ${card.color}">
+        <div class="alphabet-letter">${card.emoji}</div>
+        <div class="alphabet-name">${card.name}</div>
+      </div>
+    `;
+  } else if (card.suit === "vehicle") {
+    // 乗り物カードの表面
+    face.innerHTML = `
+      <div class="vehicle-card-content">
+        <div class="vehicle-emoji">${card.emoji}</div>
+        <div class="vehicle-name">${card.name}</div>
+      </div>
+    `;
+  } else {
+    // トランプカードの表面
+    const colorClass = card.suit === "♥" || card.suit === "♦" ? "suit-red" : "suit-black";
+    face.innerHTML = `
+      <div class="corner ${colorClass}">${card.rank}<br>${card.suit}</div>
+      <div class="rank-suit ${colorClass}" aria-hidden="true">
+        ${card.rank} ${card.suit}
+      </div>
+      <div class="corner bottom ${colorClass}">${card.rank}<br>${card.suit}</div>
+    `;
+  }
 
   inner.appendChild(back);
   inner.appendChild(face);
@@ -358,14 +579,21 @@ function resolveTurn() {
     state.matched.add(b.id);
     state.pairsRemaining -= 1;
 
-    // DOM更新（取り除く）
-    markRemoved(a.id);
-    markRemoved(b.id);
+    // 正解ポップアップを表示
+    showMatchPopup();
 
-    state.revealed = [];
-    state.inputLocked = false;
-    updateUI();
-
+    // 少し遅らせてカードを除去
+    setTimeout(() => {
+      markRemoved(a.id);
+      markRemoved(b.id);
+      state.revealed = [];
+      state.inputLocked = false;
+      updateUI();
+    }, 800);
+    
+    // 正解ポップアップを表示
+    showMatchPopup();
+    
     if (state.pairsRemaining === 0) {
       endGame();
       return;
@@ -470,7 +698,22 @@ function restartGame() {
   }));
   
   state = createInitialState();
-  state.deck = shuffle(buildStandardDeck());
+  // カードタイプに応じてデッキを選択
+  let deck;
+  switch(cardType) {
+    case "animals":
+      deck = buildAnimalDeck();
+      break;
+    case "alphabet":
+      deck = buildAlphabetDeck();
+      break;
+    case "vehicles":
+      deck = buildVehicleDeck();
+      break;
+    default:
+      deck = buildStandardDeck();
+  }
+  state.deck = shuffle(deck);
   state.players = players;
   state.started = true;
   
@@ -526,9 +769,42 @@ function hideRevealedCards() {
 function shuffleBoard() {
   if (!state.started) return;
   if (state.revealed.length > 0 || state.inputLocked) return;
-  state.deck = shuffle(state.deck.slice());
-  renderBoard();
-  updateUI();
+  
+  // 入力をロック
+  state.inputLocked = true;
+  
+  // シャッフルアニメーションクラスを追加
+  boardEl.classList.add("shuffling");
+  
+  // アニメーション中盤でカードを再配置
+  setTimeout(() => {
+    state.deck = shuffle(state.deck.slice());
+    renderBoard();
+    // 新しくレンダリングしたカードにもアニメーションクラスを適用
+    boardEl.classList.add("shuffling");
+  }, 750);
+  
+  // アニメーション終了後にクラスを削除
+  setTimeout(() => {
+    boardEl.classList.remove("shuffling");
+    state.inputLocked = false;
+    updateUI();
+  }, 1600);
+}
+
+// カードタイプ選択の処理
+function setupCardTypeSelector() {
+  const cardTypeBtns = document.querySelectorAll(".card-type-btn");
+  cardTypeBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      // 全てのボタンからactiveクラスを削除
+      cardTypeBtns.forEach(b => b.classList.remove("active"));
+      // クリックしたボタンにactiveクラスを追加
+      btn.classList.add("active");
+      // カードタイプを更新
+      cardType = btn.dataset.type;
+    });
+  });
 }
 
 // イベント登録
@@ -541,5 +817,26 @@ hideBtn.addEventListener("click", hideRevealedCards);
 shuffleBtn.addEventListener("click", shuffleBoard);
 menuBtn.addEventListener("click", newGame);
 
+/**
+ * 正解ポップアップを表示
+ */
+function showMatchPopup() {
+  const popup = document.getElementById("matchPopup");
+  if (!popup) return;
+  
+  // ポップアップを表示
+  popup.classList.remove("hidden");
+  popup.classList.add("show");
+  
+  // 1.5秒後に自動で非表示
+  setTimeout(() => {
+    popup.classList.remove("show");
+    setTimeout(() => {
+      popup.classList.add("hidden");
+    }, 300); // フェードアウトアニメーションを待つ
+  }, 1500);
+}
+
 // 初期化
 initializeSetup();
+setupCardTypeSelector();

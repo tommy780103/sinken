@@ -46,6 +46,32 @@
             </div>
           </div>
 
+          <div class="card-type-selector">
+            <label>どのカードであそぶ？</label>
+            <div class="card-type-buttons">
+              <div class="card-type-row">
+                <button class="card-type-btn active" data-type="trump">
+                  <span class="material-icons-round type-icon">playing_card</span>
+                  <span>トランプ</span>
+                </button>
+                <button class="card-type-btn" data-type="animals">
+                  <span class="material-icons-round type-icon">pets</span>
+                  <span>どうぶつ</span>
+                </button>
+              </div>
+              <div class="card-type-row">
+                <button class="card-type-btn" data-type="alphabet">
+                  <span class="material-icons-round type-icon">abc</span>
+                  <span>ABC</span>
+                </button>
+                <button class="card-type-btn" data-type="vehicles">
+                  <span class="material-icons-round type-icon">directions_car</span>
+                  <span>のりもの</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div id="playersList" class="players-list"></div>
 
           <button id="startGameBtn" class="btn btn-primary btn-large">
@@ -81,6 +107,14 @@
       </section>
 
       <section id="board" class="board" aria-label="カードボード"></section>
+
+      <!-- 正解ポップアップ -->
+      <div id="matchPopup" class="match-popup hidden">
+        <div class="match-content">
+          <span class="material-icons-round match-icon">celebration</span>
+          <span class="match-text">せいかい！</span>
+        </div>
+      </div>
 
       <!-- 結果画面 -->
       <div id="overlay" class="overlay hidden" role="dialog" aria-modal="true">
